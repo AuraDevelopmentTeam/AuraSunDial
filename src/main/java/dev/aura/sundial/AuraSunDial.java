@@ -36,8 +36,9 @@ public class AuraSunDial {
 	public static final String URL = "https://github.com/AuraDevelopmentTeam/AuraSunDial";
 	public static final String AUTHOR_BRAINSTONE = "The_BrainStone";
 
-	private static final long secondsRealInDay = TimeUnit.DAYS.toSeconds(1);
-	private static final long ticksInMinecraftDay = 24000;
+	protected static final long secondsRealInDay = TimeUnit.DAYS.toSeconds(1);
+	protected static final long ticksInMinecraftDay = 24000;
+	protected static final long midnightOffset = (ticksInMinecraftDay * 3) / 4;
 
 	@NonNull
 	@Getter
@@ -47,7 +48,7 @@ public class AuraSunDial {
 	@Inject
 	@NonNull
 	protected Logger logger;
-	protected Task task;
+	protected Task timeTask;
 
 	public static Logger getLogger() {
 		if ((instance == null) || (instance.logger == null))
@@ -79,10 +80,9 @@ public class AuraSunDial {
 
 	@Listener
 	public void loadComplete(GameLoadCompleteEvent event) {
-		task = Task.builder().execute(this::setTime).interval(1, TimeUnit.SECONDS).async().name(ID + "-time-setter")
-				.submit(this);
+		timeTask = Task.builder().execute(this::setTime).intervalTicks(1).name(ID + "-time-setter").submit(this);
 
-		logger.debug("Started \"" + task.getName() + '"');
+		logger.debug("Started \"" + timeTask.getName() + '"');
 	}
 
 	@Listener
@@ -106,13 +106,13 @@ public class AuraSunDial {
 	public void stop(GameStoppingEvent event) throws Exception {
 		logger.info("Shutting down " + NAME + " Version " + VERSION);
 
-		task.cancel();
-		task = null;
+		timeTask.cancel();
+		timeTask = null;
 
 		logger.info("Unloaded successfully!");
 	}
 
-	private void setTime() {
+	protected void setTime() {
 		WorldProperties properties;
 		final long worldTime = getWorldTime();
 
@@ -124,11 +124,14 @@ public class AuraSunDial {
 		}
 	}
 
-	private long getWorldTime() {
-		final Calendar calendar = Calendar.getInstance();
+	protected long getWorldTime() {
+		return getWorldTime(Calendar.getInstance());
+	}
+
+	protected long getWorldTime(final Calendar calendar) {
 		final long seconds = TimeUnit.HOURS.toSeconds(calendar.get(Calendar.HOUR_OF_DAY))
 				+ TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE)) + calendar.get(Calendar.SECOND);
 
-		return (seconds * ticksInMinecraftDay) / secondsRealInDay;
+		return ((seconds * ticksInMinecraftDay) / secondsRealInDay) + midnightOffset;
 	}
 }
