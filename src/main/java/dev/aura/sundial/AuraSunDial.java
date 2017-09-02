@@ -36,7 +36,7 @@ public class AuraSunDial {
 	public static final String URL = "https://github.com/AuraDevelopmentTeam/AuraSunDial";
 	public static final String AUTHOR_BRAINSTONE = "The_BrainStone";
 
-	protected static final long secondsRealInDay = TimeUnit.DAYS.toSeconds(1);
+	protected static final long secondsInRealDay = TimeUnit.DAYS.toSeconds(1);
 	protected static final long ticksInMinecraftDay = 24000;
 	protected static final long midnightOffset = (ticksInMinecraftDay * 3) / 4;
 
@@ -57,9 +57,23 @@ public class AuraSunDial {
 			return instance.logger;
 	}
 
+	protected static long getWorldTime() {
+		return getWorldTime(Calendar.getInstance());
+	}
+
+	protected static long getWorldTime(final Calendar calendar) {
+		final long seconds = TimeUnit.HOURS.toSeconds(calendar.get(Calendar.HOUR_OF_DAY))
+				+ TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE)) + calendar.get(Calendar.SECOND);
+
+		return (((seconds * ticksInMinecraftDay) / secondsInRealDay) + midnightOffset) % ticksInMinecraftDay;
+	}
+
 	@Listener
 	public void gameConstruct(GameConstructionEvent event) {
 		instance = this;
+
+		// Make sure logger is initialized
+		logger = getLogger();
 	}
 
 	@Listener
@@ -80,13 +94,17 @@ public class AuraSunDial {
 
 	@Listener
 	public void loadComplete(GameLoadCompleteEvent event) {
-		timeTask = Task.builder().execute(this::setTime).intervalTicks(1).name(ID + "-time-setter").submit(this);
+		try {
+			timeTask = Task.builder().execute(this::setTime).intervalTicks(1).name(ID + "-time-setter").submit(this);
 
-		logger.debug("Started \"" + timeTask.getName() + '"');
+			logger.debug("Started \"" + timeTask.getName() + '"');
+		} catch (IllegalStateException e) {
+			logger.error("Sponge isn't initialized! Plugin won't work!!", e);
+		}
 	}
 
 	@Listener
-	public void reload(GameReloadEvent event) throws Exception {
+	public void reload(GameReloadEvent event) {
 		Cause cause = Cause.source(this).build();
 
 		// Unregistering everything
@@ -103,16 +121,18 @@ public class AuraSunDial {
 	}
 
 	@Listener
-	public void stop(GameStoppingEvent event) throws Exception {
+	public void stop(GameStoppingEvent event) {
 		logger.info("Shutting down " + NAME + " Version " + VERSION);
 
-		timeTask.cancel();
-		timeTask = null;
+		if (timeTask != null) {
+			timeTask.cancel();
+			timeTask = null;
+		}
 
 		logger.info("Unloaded successfully!");
 	}
 
-	protected void setTime() {
+	private void setTime() {
 		WorldProperties properties;
 		final long worldTime = getWorldTime();
 
@@ -122,16 +142,5 @@ public class AuraSunDial {
 			properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
 			properties.setWorldTime(worldTime);
 		}
-	}
-
-	protected long getWorldTime() {
-		return getWorldTime(Calendar.getInstance());
-	}
-
-	protected long getWorldTime(final Calendar calendar) {
-		final long seconds = TimeUnit.HOURS.toSeconds(calendar.get(Calendar.HOUR_OF_DAY))
-				+ TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE)) + calendar.get(Calendar.SECOND);
-
-		return ((seconds * ticksInMinecraftDay) / secondsRealInDay) + midnightOffset;
 	}
 }
