@@ -1,3 +1,9 @@
+Version 1.1.0
+-------------
+
+\+ Added config to enable and disable per world.  
+
+
 Version 1.0.1
 -------------
 

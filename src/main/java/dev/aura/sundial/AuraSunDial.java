@@ -1,12 +1,14 @@
 package dev.aura.sundial;
 
+import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.bstats.sponge.MetricsLite;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
-import org.spongepowered.api.Sponge;
+import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.cause.Cause;
@@ -23,6 +25,7 @@ import org.spongepowered.api.world.storage.WorldProperties;
 
 import com.google.inject.Inject;
 
+import dev.aura.sundial.config.Config;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -46,8 +49,14 @@ public class AuraSunDial {
 	@Inject
 	protected MetricsLite metrics;
 	@Inject
+	@DefaultConfig(sharedRoot = false)
+	@NonNull
+	protected Path configFile;
+	@Inject
 	@NonNull
 	protected Logger logger;
+	@NonNull
+	protected Config config;
 	protected Task timeTask;
 
 	public static Logger getLogger() {
@@ -55,6 +64,14 @@ public class AuraSunDial {
 			return NOPLogger.NOP_LOGGER;
 		else
 			return instance.logger;
+	}
+
+	public static Path getConfigFile() {
+		return instance.configFile;
+	}
+
+	public static Config getConfig() {
+		return instance.config;
 	}
 
 	protected static long getWorldTime() {
@@ -66,6 +83,12 @@ public class AuraSunDial {
 				+ TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE)) + calendar.get(Calendar.SECOND);
 
 		return (((seconds * ticksInMinecraftDay) / secondsInRealDay) + midnightOffset) % ticksInMinecraftDay;
+	}
+
+	protected static <T> void callSafely(T object, Consumer<T> method) {
+		if (object != null) {
+			method.accept(object);
+		}
 	}
 
 	@Listener
@@ -88,6 +111,9 @@ public class AuraSunDial {
 			logger.info("This is a unreleased development version!");
 			logger.info("Things might not work properly!");
 		}
+
+		config = new Config(this, configFile);
+		config.load();
 
 		logger.info("Loaded successfully!");
 	}
@@ -124,19 +150,23 @@ public class AuraSunDial {
 	public void stop(GameStoppingEvent event) {
 		logger.info("Shutting down " + NAME + " Version " + VERSION);
 
-		if (timeTask != null) {
-			timeTask.cancel();
-			timeTask = null;
-		}
+		callSafely(timeTask, Task::cancel);
+		timeTask = null;
+
+		callSafely(config, Config::save);
+		config = null;
 
 		logger.info("Unloaded successfully!");
 	}
 
 	private void setTime() {
+		if (config == null)
+			return;
+
 		WorldProperties properties;
 		final long worldTime = getWorldTime();
 
-		for (World world : Sponge.getGame().getServer().getWorlds()) {
+		for (World world : config.getActiveWorlds()) {
 			properties = world.getWorldStorage().getWorldProperties();
 
 			properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
