@@ -75,9 +75,6 @@ public class Config {
 
 		activeWorlds = rootNode.getNode(ACTIVE_WORLDS).getList(TOKEN_STRING, Config::getWorldNames);
 
-		logger.info(rootNode.getNode(ACTIVE_WORLDS).getList(TOKEN_STRING).toString());
-		logger.info(activeWorlds.toString());
-
 		logger.debug("Config loaded!");
 	}
 
