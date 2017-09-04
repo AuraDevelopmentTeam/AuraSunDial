@@ -1,3 +1,9 @@
+Version 1.1.1
+-------------
+
+\* Fixed config not working.  
+
+
 Version 1.1.0
 -------------
 

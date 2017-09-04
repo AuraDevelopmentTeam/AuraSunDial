@@ -15,7 +15,6 @@ import org.spongepowered.api.world.World;
 import com.google.common.reflect.TypeToken;
 
 import dev.aura.sundial.AuraSunDial;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import ninja.leaping.configurate.ConfigurationNode;
@@ -38,8 +37,7 @@ public class Config {
 	private ConfigurationLoader<CommentedConfigurationNode> loader;
 	private ConfigurationNode rootNode;
 
-	@Getter
-	private List<World> activeWorlds;
+	private List<String> activeWorlds;
 
 	public Config(AuraSunDial instance, Path configFile) {
 		this.instance = instance;
@@ -75,21 +73,29 @@ public class Config {
 			return;
 		}
 
-		activeWorlds = rootNode.getNode(ACTIVE_WORLDS).getList(TOKEN_STRING, Config::getWorldNames).stream()
-				.map(Sponge.getGame().getServer()::getWorld).filter(Optional::isPresent).map(Optional::get)
-				.collect(Collectors.toList());
+		activeWorlds = rootNode.getNode(ACTIVE_WORLDS).getList(TOKEN_STRING, Config::getWorldNames);
 
-		save();
+		logger.info(rootNode.getNode(ACTIVE_WORLDS).getList(TOKEN_STRING).toString());
+		logger.info(activeWorlds.toString());
+
+		logger.debug("Config loaded!");
 	}
 
 	public void save() {
 		try {
-			rootNode.getNode(ACTIVE_WORLDS)
-					.setValue(activeWorlds.stream().map(World::getName).collect(Collectors.toList()));
+			rootNode.getNode(ACTIVE_WORLDS).setValue(activeWorlds.stream().map(Sponge.getGame().getServer()::getWorld)
+					.filter(Optional::isPresent).map(Optional::get).map(World::getName).collect(Collectors.toList()));
 
 			loader.save(rootNode);
+
+			logger.debug("Config saved!");
 		} catch (IOException | NullPointerException e) {
 			logger.error("Config could not be saved!", e);
 		}
+	}
+
+	public List<World> getActiveWorlds() {
+		return activeWorlds.stream().map(Sponge.getGame().getServer()::getWorld).filter(Optional::isPresent)
+				.map(Optional::get).collect(Collectors.toList());
 	}
 }
