@@ -1,3 +1,9 @@
+Version 1.1.2
+-------------
+
+\* Don't reload plugin with events (makes plugin more compatible).  
+
+
 Version 1.1.1
 -------------
 
