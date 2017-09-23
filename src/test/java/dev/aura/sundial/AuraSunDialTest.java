@@ -12,11 +12,14 @@ import java.util.GregorianCalendar;
 import org.junit.Test;
 import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.EventContext;
+import org.spongepowered.api.event.cause.EventContextKeys;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameConstructionEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
+import org.spongepowered.api.plugin.PluginContainer;
 
 import lombok.Getter;
 
@@ -25,8 +28,19 @@ public class AuraSunDialTest {
 	public void eventsTest() {
 		final AuraSunDial instance = new AuraSunDial();
 		instance.configFile = Paths.get(System.getProperty("java.io.tmpdir"), "sundial", "sundial.conf");
+		final PluginContainer pluginContainer = new PluginContainer() {
+			@Override
+			public String getId() {
+				return AuraSunDial.ID;
+			}
 
-		Cause cause = Cause.source(instance).build();
+			@Override
+			public String getName() {
+				return AuraSunDial.NAME;
+			}
+		};
+
+		Cause cause = Cause.of(EventContext.builder().add(EventContextKeys.PLUGIN, pluginContainer).build(), instance);
 
 		// Starting
 		GameConstructionEvent gameConstructionEvent = SpongeEventFactory.createGameConstructionEvent(cause);

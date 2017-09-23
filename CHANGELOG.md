@@ -1,3 +1,9 @@
+Version 1.1.3
+-------------
+
+\* Fixed unit tests.  
+
+
 Version 1.1.2
 -------------
 
