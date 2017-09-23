@@ -30,19 +30,19 @@ public class AuraSunDialTest {
 
 		// Starting
 		GameConstructionEvent gameConstructionEvent = SpongeEventFactory.createGameConstructionEvent(cause);
-		instance.gameConstruct(gameConstructionEvent);
+		instance.onContstruct(gameConstructionEvent);
 		GameInitializationEvent gameInitializationEvent = SpongeEventFactory.createGameInitializationEvent(cause);
-		instance.init(gameInitializationEvent);
+		instance.onInit(gameInitializationEvent);
 		GameLoadCompleteEvent gameLoadCompleteEvent = SpongeEventFactory.createGameLoadCompleteEvent(cause);
-		instance.loadComplete(gameLoadCompleteEvent);
+		instance.onLoadComplete(gameLoadCompleteEvent);
 
 		// Reload
 		GameReloadEvent gameReloadEvent = SpongeEventFactory.createGameReloadEvent(cause);
-		instance.reload(gameReloadEvent);
+		instance.onReload(gameReloadEvent);
 
 		// Stop
 		GameStoppingEvent gameStoppingEvent = SpongeEventFactory.createGameStoppingEvent(cause);
-		instance.stop(gameStoppingEvent);
+		instance.onStop(gameStoppingEvent);
 
 		assertSame("The instance should be the same!", instance, AuraSunDial.getInstance());
 	}

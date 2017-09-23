@@ -10,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.SpongeEventFactory;
-import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameConstructionEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
@@ -92,7 +90,7 @@ public class AuraSunDial {
 	}
 
 	@Listener
-	public void gameConstruct(GameConstructionEvent event) {
+	public void onContstruct(GameConstructionEvent event) {
 		instance = this;
 
 		// Make sure logger is initialized
@@ -100,7 +98,11 @@ public class AuraSunDial {
 	}
 
 	@Listener
-	public void init(GameInitializationEvent event) {
+	public void onInit(GameInitializationEvent event) {
+		onInit();
+	}
+
+	public void onInit() {
 		logger.info("Initializing " + NAME + " Version " + VERSION);
 
 		if (VERSION.contains("SNAPSHOT")) {
@@ -119,7 +121,11 @@ public class AuraSunDial {
 	}
 
 	@Listener
-	public void loadComplete(GameLoadCompleteEvent event) {
+	public void onLoadComplete(GameLoadCompleteEvent event) {
+		onLoadComplete();
+	}
+
+	public void onLoadComplete() {
 		try {
 			timeTask = Task.builder().execute(this::setTime).intervalTicks(1).name(ID + "-time-setter").submit(this);
 
@@ -130,24 +136,23 @@ public class AuraSunDial {
 	}
 
 	@Listener
-	public void reload(GameReloadEvent event) {
-		Cause cause = Cause.source(this).build();
-
+	public void onReload(GameReloadEvent event) {
 		// Unregistering everything
-		GameStoppingEvent gameStoppingEvent = SpongeEventFactory.createGameStoppingEvent(cause);
-		stop(gameStoppingEvent);
+		onStop();
 
 		// Starting over
-		GameInitializationEvent gameInitializationEvent = SpongeEventFactory.createGameInitializationEvent(cause);
-		init(gameInitializationEvent);
-		GameLoadCompleteEvent gameLoadCompleteEvent = SpongeEventFactory.createGameLoadCompleteEvent(cause);
-		loadComplete(gameLoadCompleteEvent);
+		onInit();
+		onLoadComplete();
 
 		logger.info("Reloaded successfully!");
 	}
 
 	@Listener
-	public void stop(GameStoppingEvent event) {
+	public void onStop(GameStoppingEvent event) {
+		onStop();
+	}
+
+	public void onStop() {
 		logger.info("Shutting down " + NAME + " Version " + VERSION);
 
 		callSafely(timeTask, Task::cancel);
