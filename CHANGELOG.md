@@ -1,3 +1,10 @@
+Version 1.2.0
+-------------
+
+\+ Added `/realtime` command, that allows to enable and disable the realtime synchronization per world.  
+\+ Added appropriate permissions for the `/realtime` command.  
+
+
 Version 1.1.3
 -------------
 

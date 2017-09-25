@@ -1,66 +1,17 @@
 package dev.aura.sundial;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import org.junit.Test;
-import org.spongepowered.api.event.SpongeEventFactory;
-import org.spongepowered.api.event.cause.Cause;
-import org.spongepowered.api.event.cause.EventContext;
-import org.spongepowered.api.event.cause.EventContextKeys;
-import org.spongepowered.api.event.game.GameReloadEvent;
-import org.spongepowered.api.event.game.state.GameConstructionEvent;
-import org.spongepowered.api.event.game.state.GameInitializationEvent;
-import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
-import org.spongepowered.api.event.game.state.GameStoppingEvent;
-import org.spongepowered.api.plugin.PluginContainer;
 
 import lombok.Getter;
 
 public class AuraSunDialTest {
-	@Test
-	public void eventsTest() {
-		final AuraSunDial instance = new AuraSunDial();
-		instance.configFile = Paths.get(System.getProperty("java.io.tmpdir"), "sundial", "sundial.conf");
-		final PluginContainer pluginContainer = new PluginContainer() {
-			@Override
-			public String getId() {
-				return AuraSunDial.ID;
-			}
-
-			@Override
-			public String getName() {
-				return AuraSunDial.NAME;
-			}
-		};
-
-		Cause cause = Cause.of(EventContext.builder().add(EventContextKeys.PLUGIN, pluginContainer).build(), instance);
-
-		// Starting
-		GameConstructionEvent gameConstructionEvent = SpongeEventFactory.createGameConstructionEvent(cause);
-		instance.onContstruct(gameConstructionEvent);
-		GameInitializationEvent gameInitializationEvent = SpongeEventFactory.createGameInitializationEvent(cause);
-		instance.onInit(gameInitializationEvent);
-		GameLoadCompleteEvent gameLoadCompleteEvent = SpongeEventFactory.createGameLoadCompleteEvent(cause);
-		instance.onLoadComplete(gameLoadCompleteEvent);
-
-		// Reload
-		GameReloadEvent gameReloadEvent = SpongeEventFactory.createGameReloadEvent(cause);
-		instance.onReload(gameReloadEvent);
-
-		// Stop
-		GameStoppingEvent gameStoppingEvent = SpongeEventFactory.createGameStoppingEvent(cause);
-		instance.onStop(gameStoppingEvent);
-
-		assertSame("The instance should be the same!", instance, AuraSunDial.getInstance());
-	}
-
 	@Test
 	public void callSafelyTest() {
 		TestHelper nullObj = null;
