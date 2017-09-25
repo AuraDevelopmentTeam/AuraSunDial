@@ -95,4 +95,14 @@ public class Config {
 		return activeWorlds.stream().map(Sponge.getGame().getServer()::getWorld).filter(Optional::isPresent)
 				.map(Optional::get).collect(Collectors.toList());
 	}
+
+	public void setWorld(String world, boolean enabled) {
+		boolean contains = activeWorlds.contains(world);
+
+		if (!contains && enabled) {
+			activeWorlds.add(world);
+		} else if (contains && !enabled) {
+			activeWorlds.remove(world);
+		}
+	}
 }

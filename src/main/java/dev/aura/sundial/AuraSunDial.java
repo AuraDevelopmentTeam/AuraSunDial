@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import org.bstats.sponge.MetricsLite;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
@@ -23,6 +24,7 @@ import org.spongepowered.api.world.storage.WorldProperties;
 
 import com.google.inject.Inject;
 
+import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
 import lombok.Getter;
 import lombok.NonNull;
@@ -117,6 +119,8 @@ public class AuraSunDial {
 		config = new Config(this, configFile);
 		config.load();
 
+		CommandRealTime.register(this);
+
 		logger.info("Loaded successfully!");
 	}
 
@@ -154,6 +158,9 @@ public class AuraSunDial {
 
 	public void onStop() {
 		logger.info("Shutting down " + NAME + " Version " + VERSION);
+
+		// TODO: Remove all commands
+		Sponge.getCommandManager().getOwnedBy(this);
 
 		callSafely(timeTask, Task::cancel);
 		timeTask = null;
