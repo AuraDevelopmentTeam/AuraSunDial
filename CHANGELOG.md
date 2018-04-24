@@ -1,3 +1,10 @@
+Version 1.2.1
+-------------
+
+\* Updated to Sponge 7.1.0-SNAPSHOT.  
+\* Internal improvements.    
+
+
 Version 1.2.0
 -------------
 
