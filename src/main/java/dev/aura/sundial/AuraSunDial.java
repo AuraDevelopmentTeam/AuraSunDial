@@ -1,10 +1,14 @@
 package dev.aura.sundial;
 
+import com.google.inject.Inject;
+import dev.aura.sundial.command.CommandRealTime;
+import dev.aura.sundial.config.Config;
 import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
+import lombok.Getter;
+import lombok.NonNull;
 import org.bstats.sponge.MetricsLite;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
@@ -22,167 +26,169 @@ import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.gamerule.DefaultGameRules;
 import org.spongepowered.api.world.storage.WorldProperties;
 
-import com.google.inject.Inject;
-
-import dev.aura.sundial.command.CommandRealTime;
-import dev.aura.sundial.config.Config;
-import lombok.Getter;
-import lombok.NonNull;
-
-@Plugin(id = AuraSunDial.ID, name = AuraSunDial.NAME, version = AuraSunDial.VERSION, description = AuraSunDial.DESCRIPTION, url = AuraSunDial.URL, authors = {
-		AuraSunDial.AUTHOR_BRAINSTONE })
+@Plugin(
+  id = AuraSunDial.ID,
+  name = AuraSunDial.NAME,
+  version = AuraSunDial.VERSION,
+  description = AuraSunDial.DESCRIPTION,
+  url = AuraSunDial.URL,
+  authors = {AuraSunDial.AUTHOR_BRAINSTONE}
+)
 public class AuraSunDial {
-	public static final String ID = "@id@";
-	public static final String NAME = "@name@";
-	public static final String VERSION = "@version@";
-	public static final String DESCRIPTION = "@description@";
-	public static final String URL = "https://github.com/AuraDevelopmentTeam/AuraSunDial";
-	public static final String AUTHOR_BRAINSTONE = "The_BrainStone";
+  public static final String ID = "@id@";
+  public static final String NAME = "@name@";
+  public static final String VERSION = "@version@";
+  public static final String DESCRIPTION = "@description@";
+  public static final String URL = "https://github.com/AuraDevelopmentTeam/AuraSunDial";
+  public static final String AUTHOR_BRAINSTONE = "The_BrainStone";
 
-	protected static final long secondsInRealDay = TimeUnit.DAYS.toSeconds(1);
-	protected static final long ticksInMinecraftDay = 24000;
-	protected static final long midnightOffset = (ticksInMinecraftDay * 3) / 4;
+  protected static final long secondsInRealDay = TimeUnit.DAYS.toSeconds(1);
+  protected static final long ticksInMinecraftDay = 24000;
+  protected static final long midnightOffset = (ticksInMinecraftDay * 3) / 4;
 
-	@NonNull
-	@Getter
-	protected static AuraSunDial instance = null;
-	@Inject
-	protected MetricsLite metrics;
-	@Inject
-	@DefaultConfig(sharedRoot = false)
-	@NonNull
-	protected Path configFile;
-	@Inject
-	@NonNull
-	protected Logger logger;
-	@NonNull
-	protected Config config;
-	protected Task timeTask;
+  @NonNull @Getter private static AuraSunDial instance = null;
+  @Inject protected MetricsLite metrics;
 
-	public static Logger getLogger() {
-		if ((instance == null) || (instance.logger == null))
-			return NOPLogger.NOP_LOGGER;
-		else
-			return instance.logger;
-	}
+  @Inject
+  @DefaultConfig(sharedRoot = false)
+  @NonNull
+  protected Path configFile;
 
-	public static Path getConfigFile() {
-		return instance.configFile;
-	}
+  @Inject @NonNull protected Logger logger;
+  @NonNull protected Config config;
+  protected Task timeTask;
 
-	public static Config getConfig() {
-		return instance.config;
-	}
+  public static Logger getLogger() {
+    if ((instance == null) || (instance.logger == null)) return NOPLogger.NOP_LOGGER;
+    else return instance.logger;
+  }
 
-	protected static long getWorldTime() {
-		return getWorldTime(Calendar.getInstance());
-	}
+  public static Path getConfigFile() {
+    return instance.configFile;
+  }
 
-	protected static long getWorldTime(final Calendar calendar) {
-		final long seconds = TimeUnit.HOURS.toSeconds(calendar.get(Calendar.HOUR_OF_DAY))
-				+ TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE)) + calendar.get(Calendar.SECOND);
+  public static Config getConfig() {
+    return instance.config;
+  }
 
-		return (((seconds * ticksInMinecraftDay) / secondsInRealDay) + midnightOffset) % ticksInMinecraftDay;
-	}
+  protected static long getWorldTime() {
+    return getWorldTime(Calendar.getInstance());
+  }
 
-	protected static <T> void callSafely(T object, Consumer<T> method) {
-		if (object != null) {
-			method.accept(object);
-		}
-	}
+  protected static long getWorldTime(final Calendar calendar) {
+    final long seconds =
+        TimeUnit.HOURS.toSeconds(calendar.get(Calendar.HOUR_OF_DAY))
+            + TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE))
+            + calendar.get(Calendar.SECOND);
 
-	@Listener
-	public void onContstruct(GameConstructionEvent event) {
-		instance = this;
+    return (((seconds * ticksInMinecraftDay) / secondsInRealDay) + midnightOffset)
+        % ticksInMinecraftDay;
+  }
 
-		// Make sure logger is initialized
-		logger = getLogger();
-	}
+  protected static <T> void callSafely(T object, Consumer<T> method) {
+    if (object != null) {
+      method.accept(object);
+    }
+  }
 
-	@Listener
-	public void onInit(GameInitializationEvent event) {
-		onInit();
-	}
+  @Listener
+  public void onContstruct(GameConstructionEvent event) {
+    if (instance != null) throw new IllegalStateException("instance cannot be instantiated twice");
 
-	public void onInit() {
-		logger.info("Initializing " + NAME + " Version " + VERSION);
+    instance = this;
 
-		if (VERSION.contains("SNAPSHOT")) {
-			logger.warn("WARNING! This is a snapshot version!");
-			logger.warn("Use at your own risk!");
-		}
-		if (VERSION.contains("DEV")) {
-			logger.info("This is a unreleased development version!");
-			logger.info("Things might not work properly!");
-		}
+    // Make sure logger is initialized
+    logger = getLogger();
+  }
 
-		config = new Config(this, configFile);
-		config.load();
+  @Listener
+  public void onInit(GameInitializationEvent event) {
+    onInit();
+  }
 
-		CommandRealTime.register(this);
+  public void onInit() {
+    logger.info("Initializing " + NAME + " Version " + VERSION);
 
-		logger.info("Loaded successfully!");
-	}
+    if (VERSION.contains("SNAPSHOT")) {
+      logger.warn("WARNING! This is a snapshot version!");
+      logger.warn("Use at your own risk!");
+    }
+    if (VERSION.contains("DEV")) {
+      logger.info("This is a unreleased development version!");
+      logger.info("Things might not work properly!");
+    }
 
-	@Listener
-	public void onLoadComplete(GameLoadCompleteEvent event) {
-		onLoadComplete();
-	}
+    config = new Config(this, configFile);
+    config.load();
 
-	public void onLoadComplete() {
-		try {
-			timeTask = Task.builder().execute(this::setTime).intervalTicks(1).name(ID + "-time-setter").submit(this);
+    CommandRealTime.register(this);
 
-			logger.debug("Started \"" + timeTask.getName() + '"');
-		} catch (IllegalStateException e) {
-			logger.error("Sponge isn't initialized! Plugin won't work!!", e);
-		}
-	}
+    logger.info("Loaded successfully!");
+  }
 
-	@Listener
-	public void onReload(GameReloadEvent event) {
-		// Unregistering everything
-		onStop();
+  @Listener
+  public void onLoadComplete(GameLoadCompleteEvent event) {
+    onLoadComplete();
+  }
 
-		// Starting over
-		onInit();
-		onLoadComplete();
+  public void onLoadComplete() {
+    try {
+      timeTask =
+          Task.builder()
+              .execute(this::setTime)
+              .intervalTicks(1)
+              .name(ID + "-time-setter")
+              .submit(this);
 
-		logger.info("Reloaded successfully!");
-	}
+      logger.debug("Started \"" + timeTask.getName() + '"');
+    } catch (IllegalStateException e) {
+      logger.error("Sponge isn't initialized! Plugin won't work!!", e);
+    }
+  }
 
-	@Listener
-	public void onStop(GameStoppingEvent event) {
-		onStop();
-	}
+  @Listener
+  public void onReload(GameReloadEvent event) {
+    // Unregistering everything
+    onStop();
 
-	public void onStop() {
-		logger.info("Shutting down " + NAME + " Version " + VERSION);
+    // Starting over
+    onInit();
+    onLoadComplete();
 
-		// TODO: Remove all commands
-		Sponge.getCommandManager().getOwnedBy(this);
+    logger.info("Reloaded successfully!");
+  }
 
-		callSafely(timeTask, Task::cancel);
-		timeTask = null;
+  @Listener
+  public void onStop(GameStoppingEvent event) {
+    onStop();
+  }
 
-		callSafely(config, Config::save);
-		config = null;
+  public void onStop() {
+    logger.info("Shutting down " + NAME + " Version " + VERSION);
 
-		logger.info("Unloaded successfully!");
-	}
+    // TODO: Remove all commands
+    Sponge.getCommandManager().getOwnedBy(this);
 
-	private void setTime() {
-		if (config == null)
-			return;
+    callSafely(timeTask, Task::cancel);
+    timeTask = null;
 
-		WorldProperties properties;
-		final long worldTime = getWorldTime();
+    callSafely(config, Config::save);
+    config = null;
 
-		for (World world : config.getActiveWorlds()) {
-			properties = world.getWorldStorage().getWorldProperties();
+    logger.info("Unloaded successfully!");
+  }
 
-			properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
-			properties.setWorldTime(worldTime);
-		}
-	}
+  private void setTime() {
+    if (config == null) return;
+
+    WorldProperties properties;
+    final long worldTime = getWorldTime();
+
+    for (World world : config.getActiveWorlds()) {
+      properties = world.getWorldStorage().getWorldProperties();
+
+      properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
+      properties.setWorldTime(worldTime);
+    }
+  }
 }
