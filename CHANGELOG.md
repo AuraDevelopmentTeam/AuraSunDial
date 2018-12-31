@@ -1,3 +1,9 @@
+Version 1.2.3
+-------------
+
+\* Fixed missing metrics classes.  
+
+
 Version 1.2.2
 -------------
 
