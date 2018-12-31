@@ -1,3 +1,9 @@
+Version 1.2.2
+-------------
+
+\* Updated bStats to 1.4 to comply with the Ore guidelines.  
+
+
 Version 1.2.1
 -------------
 
