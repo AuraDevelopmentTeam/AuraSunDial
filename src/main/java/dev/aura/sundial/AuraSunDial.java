@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.NonNull;
-import org.bstats.sponge.MetricsLite;
+import org.bstats.sponge.MetricsLite2;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 import org.spongepowered.api.Sponge;
@@ -47,7 +47,7 @@ public class AuraSunDial {
   protected static final long midnightOffset = (ticksInMinecraftDay * 3) / 4;
 
   @NonNull @Getter private static AuraSunDial instance = null;
-  @Inject protected MetricsLite metrics;
+  @Inject protected MetricsLite2 metrics;
 
   @Inject
   @DefaultConfig(sharedRoot = false)
