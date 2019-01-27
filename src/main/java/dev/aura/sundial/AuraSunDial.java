@@ -167,7 +167,7 @@ public class AuraSunDial {
     logger.info("Shutting down " + NAME + " Version " + VERSION);
 
     // TODO: Remove all commands
-    Sponge.getCommandManager().getOwnedBy(this);
+    Sponge.getCommandManager().getOwnedBy(this).forEach(Sponge.getCommandManager()::removeMapping);
 
     callSafely(timeTask, Task::cancel);
     timeTask = null;
