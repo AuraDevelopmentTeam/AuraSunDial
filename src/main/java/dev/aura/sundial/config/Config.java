@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import ninja.leaping.configurate.ConfigurationNode;
@@ -22,6 +23,7 @@ import org.spongepowered.api.world.World;
 
 public class Config {
   private static final String ACTIVE_WORLDS = "activeWorlds";
+  private static final String OFFSET = "offset";
   private static final TypeToken<String> TOKEN_STRING = TypeToken.of(String.class);
 
   @NonNull private final AuraSunDial instance;
@@ -32,6 +34,7 @@ public class Config {
   private ConfigurationNode rootNode;
 
   private List<String> activeWorlds;
+  @Getter private double offset;
 
   public Config(AuraSunDial instance, Path configFile) {
     this.instance = instance;
@@ -77,6 +80,7 @@ public class Config {
     }
 
     activeWorlds = rootNode.getNode(ACTIVE_WORLDS).getList(TOKEN_STRING, Config::getWorldNames);
+    offset = rootNode.getNode(OFFSET).getDouble(0.0);
 
     logger.debug("Config loaded!");
   }
@@ -93,6 +97,7 @@ public class Config {
                   .map(Optional::get)
                   .map(World::getName)
                   .collect(Collectors.toList()));
+      rootNode.getNode(OFFSET).setValue(offset);
 
       loader.save(rootNode);
 

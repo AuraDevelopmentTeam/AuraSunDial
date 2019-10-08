@@ -103,7 +103,7 @@ public class AuraSunDial {
     config = new Config(this, configFile);
     config.load();
 
-    timeCalculator = new TimeCalculator(0);
+    timeCalculator = new TimeCalculator(config.getOffset());
 
     CommandRealTime.register(this);
 
