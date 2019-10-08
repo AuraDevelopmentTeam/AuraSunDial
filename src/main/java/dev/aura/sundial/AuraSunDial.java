@@ -3,9 +3,8 @@ package dev.aura.sundial;
 import com.google.inject.Inject;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
+import dev.aura.sundial.util.TimeCalculator;
 import java.nio.file.Path;
-import java.util.Calendar;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.NonNull;
@@ -42,10 +41,6 @@ public class AuraSunDial {
   public static final String URL = "https://github.com/AuraDevelopmentTeam/AuraSunDial";
   public static final String AUTHOR_BRAINSTONE = "The_BrainStone";
 
-  protected static final long secondsInRealDay = TimeUnit.DAYS.toSeconds(1);
-  protected static final long ticksInMinecraftDay = 24000;
-  protected static final long midnightOffset = (ticksInMinecraftDay * 3) / 4;
-
   @NonNull @Getter private static AuraSunDial instance = null;
   @Inject protected MetricsLite2 metrics;
 
@@ -56,6 +51,7 @@ public class AuraSunDial {
 
   @Inject @NonNull protected Logger logger;
   @NonNull protected Config config;
+  protected TimeCalculator timeCalculator;
   protected Task timeTask;
 
   public static Logger getLogger() {
@@ -69,20 +65,6 @@ public class AuraSunDial {
 
   public static Config getConfig() {
     return instance.config;
-  }
-
-  protected static long getWorldTime() {
-    return getWorldTime(Calendar.getInstance());
-  }
-
-  protected static long getWorldTime(final Calendar calendar) {
-    final long seconds =
-        TimeUnit.HOURS.toSeconds(calendar.get(Calendar.HOUR_OF_DAY))
-            + TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE))
-            + calendar.get(Calendar.SECOND);
-
-    return (((seconds * ticksInMinecraftDay) / secondsInRealDay) + midnightOffset)
-        % ticksInMinecraftDay;
   }
 
   protected static <T> void callSafely(T object, Consumer<T> method) {
@@ -120,6 +102,8 @@ public class AuraSunDial {
 
     config = new Config(this, configFile);
     config.load();
+
+    timeCalculator = new TimeCalculator(0);
 
     CommandRealTime.register(this);
 
@@ -169,6 +153,8 @@ public class AuraSunDial {
     // TODO: Remove all commands
     Sponge.getCommandManager().getOwnedBy(this).forEach(Sponge.getCommandManager()::removeMapping);
 
+    timeCalculator = null;
+
     callSafely(timeTask, Task::cancel);
     timeTask = null;
 
@@ -182,7 +168,7 @@ public class AuraSunDial {
     if (config == null) return;
 
     WorldProperties properties;
-    final long worldTime = getWorldTime();
+    final long worldTime = timeCalculator.getWorldTime();
 
     for (World world : config.getActiveWorlds()) {
       properties = world.getWorldStorage().getWorldProperties();
