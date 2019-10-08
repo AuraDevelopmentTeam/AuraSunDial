@@ -2,12 +2,14 @@ package dev.aura.sundial.command;
 
 import com.google.common.collect.ImmutableMap;
 import dev.aura.sundial.AuraSunDial;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandPermissionException;
@@ -117,7 +119,11 @@ public class CommandRealTime implements CommandExecutor {
 
     worldNames.stream().forEach(world -> AuraSunDial.getConfig().setWorld(world, mode));
 
-    AuraSunDial.getConfig().save();
+    try {
+      AuraSunDial.getInstance().saveConfig();
+    } catch (IOException | ObjectMappingException e) {
+      AuraSunDial.getLogger().error("Config could not be saved!", e);
+    }
 
     if (worldNames.size() > 0) {
       src.sendMessage(

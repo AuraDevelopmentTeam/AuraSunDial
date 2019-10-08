@@ -1,13 +1,19 @@
 package dev.aura.sundial;
 
+import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
 import dev.aura.sundial.util.TimeCalculator;
-import java.nio.file.Path;
+import java.io.IOException;
 import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.NonNull;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.GuiceObjectMapperFactory;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.bstats.sponge.MetricsLite2;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
@@ -41,13 +47,16 @@ public class AuraSunDial {
   public static final String URL = "https://github.com/AuraDevelopmentTeam/AuraSunDial";
   public static final String AUTHOR_BRAINSTONE = "The_BrainStone";
 
+  private static final TypeToken<Config> configToken = TypeToken.of(Config.class);
+
   @NonNull @Getter private static AuraSunDial instance = null;
   @Inject protected MetricsLite2 metrics;
 
+  @Inject protected GuiceObjectMapperFactory factory;
+
   @Inject
   @DefaultConfig(sharedRoot = false)
-  @NonNull
-  protected Path configFile;
+  protected ConfigurationLoader<CommentedConfigurationNode> loader;
 
   @Inject @NonNull protected Logger logger;
   @NonNull protected Config config;
@@ -57,10 +66,6 @@ public class AuraSunDial {
   public static Logger getLogger() {
     if ((instance == null) || (instance.logger == null)) return NOPLogger.NOP_LOGGER;
     else return instance.logger;
-  }
-
-  public static Path getConfigFile() {
-    return instance.configFile;
   }
 
   public static Config getConfig() {
@@ -84,11 +89,11 @@ public class AuraSunDial {
   }
 
   @Listener
-  public void onInit(GameInitializationEvent event) {
+  public void onInit(GameInitializationEvent event) throws IOException, ObjectMappingException {
     onInit();
   }
 
-  public void onInit() {
+  public void onInit() throws IOException, ObjectMappingException {
     logger.info("Initializing " + NAME + " Version " + VERSION);
 
     if (VERSION.contains("SNAPSHOT")) {
@@ -100,8 +105,7 @@ public class AuraSunDial {
       logger.info("Things might not work properly!");
     }
 
-    config = new Config(this, configFile);
-    config.load();
+    loadConfig();
 
     timeCalculator = new TimeCalculator(config.getOffset());
 
@@ -131,7 +135,7 @@ public class AuraSunDial {
   }
 
   @Listener
-  public void onReload(GameReloadEvent event) {
+  public void onReload(GameReloadEvent event) throws IOException, ObjectMappingException {
     // Unregistering everything
     onStop();
 
@@ -143,11 +147,11 @@ public class AuraSunDial {
   }
 
   @Listener
-  public void onStop(GameStoppingEvent event) {
+  public void onStop(GameStoppingEvent event) throws IOException, ObjectMappingException {
     onStop();
   }
 
-  public void onStop() {
+  public void onStop() throws IOException, ObjectMappingException {
     logger.info("Shutting down " + NAME + " Version " + VERSION);
 
     // TODO: Remove all commands
@@ -158,10 +162,30 @@ public class AuraSunDial {
     callSafely(timeTask, Task::cancel);
     timeTask = null;
 
-    callSafely(config, Config::save);
+    saveConfig();
     config = null;
 
     logger.info("Unloaded successfully!");
+  }
+
+  private void loadConfig() throws IOException, ObjectMappingException {
+    logger.debug("Loading config...");
+
+    CommentedConfigurationNode node =
+        loader.load(ConfigurationOptions.defaults().setObjectMapperFactory(factory));
+
+    config = node.<Config>getValue(configToken, Config::new);
+
+    saveConfig();
+  }
+
+  public void saveConfig() throws IOException, ObjectMappingException {
+    CommentedConfigurationNode node =
+        loader.load(ConfigurationOptions.defaults().setObjectMapperFactory(factory));
+
+    logger.debug("Saving/Formatting config...");
+    node.setValue(configToken, config);
+    loader.save(node);
   }
 
   private void setTime() {

@@ -1,47 +1,32 @@
 package dev.aura.sundial.config;
 
-import com.google.common.reflect.TypeToken;
-import dev.aura.sundial.AuraSunDial;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
-import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import org.slf4j.Logger;
+import lombok.NoArgsConstructor;
+import ninja.leaping.configurate.objectmapping.Setting;
+import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.world.World;
 
+@ConfigSerializable
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Config {
-  private static final String ACTIVE_WORLDS = "activeWorlds";
-  private static final String OFFSET = "offset";
-  private static final TypeToken<String> TOKEN_STRING = TypeToken.of(String.class);
+  @Setting(comment = "A list of all the worlds AuraSunDial synchronizes the in-game time with.")
+  private List<String> activeWorlds = getWorldNames();
 
-  @NonNull private final AuraSunDial instance;
-  @NonNull private final Logger logger;
-  @NonNull private final Path configFile;
-
-  private ConfigurationLoader<CommentedConfigurationNode> loader;
-  private ConfigurationNode rootNode;
-
-  private List<String> activeWorlds;
-  @Getter private double offset;
-
-  public Config(AuraSunDial instance, Path configFile) {
-    this.instance = instance;
-    logger = AuraSunDial.getLogger();
-    this.configFile = configFile;
-    activeWorlds = Collections.emptyList();
-  }
+  @Setting(
+    comment =
+        "Allows the time to be offset. The value is in hours and accepts decimal and negative values (so to offset the time to 1:30\n"
+            + "earlier, use the value -1.5)"
+  )
+  @Getter
+  private double offset = 0.0;
 
   private static List<String> getWorldNames() {
     return Sponge.getGame()
@@ -50,61 +35,6 @@ public class Config {
         .stream()
         .map(World::getName)
         .collect(Collectors.toList());
-  }
-
-  @SneakyThrows(value = ObjectMappingException.class)
-  public void load() {
-    if (!configFile.toFile().exists()) {
-      try {
-        Sponge.getAssetManager()
-            .getAsset(
-                instance,
-                Optional.ofNullable(configFile.getFileName()).map(Path::toString).orElse(""))
-            .get()
-            .copyToFile(configFile);
-      } catch (IOException | NoSuchElementException | IllegalStateException e) {
-        logger.error("Could not load default config!", e);
-
-        return;
-      }
-    }
-
-    loader = HoconConfigurationLoader.builder().setPath(configFile).build();
-
-    try {
-      rootNode = loader.load();
-    } catch (IOException e) {
-      logger.error("Config could not be loaded!", e);
-
-      return;
-    }
-
-    activeWorlds = rootNode.getNode(ACTIVE_WORLDS).getList(TOKEN_STRING, Config::getWorldNames);
-    offset = rootNode.getNode(OFFSET).getDouble(0.0);
-
-    logger.debug("Config loaded!");
-  }
-
-  public void save() {
-    try {
-      rootNode
-          .getNode(ACTIVE_WORLDS)
-          .setValue(
-              activeWorlds
-                  .stream()
-                  .map(Sponge.getGame().getServer()::getWorld)
-                  .filter(Optional::isPresent)
-                  .map(Optional::get)
-                  .map(World::getName)
-                  .collect(Collectors.toList()));
-      rootNode.getNode(OFFSET).setValue(offset);
-
-      loader.save(rootNode);
-
-      logger.debug("Config saved!");
-    } catch (IOException | NullPointerException e) {
-      logger.error("Config could not be saved!", e);
-    }
   }
 
   public List<World> getActiveWorlds() {
