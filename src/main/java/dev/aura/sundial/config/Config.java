@@ -22,11 +22,21 @@ public class Config {
 
   @Setting(
     comment =
-        "Allows the time to be offset. The value is in hours and accepts decimal and negative values (so to offset the time to 1:30\n"
-            + "earlier, use the value -1.5)"
+        "Allows the time to be offset. The value is in hours and accepts decimal and negative values.\n"
+            + "So to offset the time to 1:30 earlier, use the value -1.5."
   )
   @Getter
   private double offset = 0.0;
+
+  @Setting(
+    comment =
+        "Allows you to speed up or slow down the passage of time. Values above 1.0 make the days go faster, values below make it go\n"
+            + "slower.\n"
+            + "So if you want two game days to pass in a single real life day, set the value to 2.0. If you want to two real life days to\n"
+            + "pass for a single in game day, set the value to 0.5."
+  )
+  @Getter
+  private double speedModifier = 1.0;
 
   private static List<String> getWorldNames() {
     return Sponge.getGame()

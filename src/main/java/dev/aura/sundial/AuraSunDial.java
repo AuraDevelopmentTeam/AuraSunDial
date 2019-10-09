@@ -107,7 +107,7 @@ public class AuraSunDial {
 
     loadConfig();
 
-    timeCalculator = new TimeCalculator(config.getOffset());
+    timeCalculator = new TimeCalculator(config.getOffset(), config.getSpeedModifier());
 
     CommandRealTime.register(this);
 

@@ -19,6 +19,7 @@ public class TimeCalculator {
   private static final long midnightOffset = (ticksInMinecraftDay * 3) / 4;
 
   private final double offset;
+  private final double speedModifier;
 
   @Getter(value = AccessLevel.PACKAGE, lazy = true)
   private final long offsetTicks = generateOffsetTicks();
@@ -29,14 +30,14 @@ public class TimeCalculator {
 
   public long getWorldTime(final Calendar calendar) {
     final long seconds =
-        TimeUnit.HOURS.toSeconds(calendar.get(Calendar.HOUR_OF_DAY))
-            + TimeUnit.MINUTES.toSeconds(calendar.get(Calendar.MINUTE))
-            + calendar.get(Calendar.SECOND);
+        ((long)
+                ((calendar.getTimeInMillis() + calendar.getTimeZone().getRawOffset())
+                    * speedModifier))
+            / 1000L;
 
-    return (((seconds * ticksInMinecraftDay) / secondsInRealDay)
-            + midnightOffset
-            + getOffsetTicks())
-        % ticksInMinecraftDay;
+    return Math.floorMod(
+        ((seconds * ticksInMinecraftDay) / secondsInRealDay) + midnightOffset + getOffsetTicks(),
+        ticksInMinecraftDay);
   }
 
   private long generateOffsetTicks() {
