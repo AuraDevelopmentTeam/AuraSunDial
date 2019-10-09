@@ -3,7 +3,7 @@
 [![Build Status](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/badges/master/build.svg)](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/pipelines)
 [![Coverage Report](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/badges/master/coverage.svg)](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/pipelines)
 
-Simple plugin to limit how many of a type of block a player can place
+A simple Sponge Plugin to synchronize the server/in-game time to the realtime
 
 ## Downloads
 
