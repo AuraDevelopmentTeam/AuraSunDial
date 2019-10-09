@@ -162,7 +162,6 @@ public class AuraSunDial {
     callSafely(timeTask, Task::cancel);
     timeTask = null;
 
-    saveConfig();
     config = null;
 
     logger.info("Unloaded successfully!");
