@@ -1,3 +1,12 @@
+Version 1.3.0
+-------------
+
+\+ Added time offset option.  
+\+ Added speed multiplier option.  
+\+ Added README.  
+\* Internal improvements to the config and reloading the plugin.    
+
+
 Version 1.2.3
 -------------
 

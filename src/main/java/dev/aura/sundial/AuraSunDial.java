@@ -154,7 +154,6 @@ public class AuraSunDial {
   public void onStop() throws IOException, ObjectMappingException {
     logger.info("Shutting down " + NAME + " Version " + VERSION);
 
-    // TODO: Remove all commands
     Sponge.getCommandManager().getOwnedBy(this).forEach(Sponge.getCommandManager()::removeMapping);
 
     timeCalculator = null;
