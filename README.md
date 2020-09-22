@@ -1,6 +1,6 @@
 # [AuraSunDial](https://github.com/AuraDevelopmentTeam/AuraSunDial)
 
-[![Build Status](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/badges/master/build.svg)](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/pipelines)
+[![Build Status](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/badges/master/pipeline.svg)](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/pipelines)
 [![Coverage Report](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/badges/master/coverage.svg)](https://gitlab.aura-dev.team/AuraDev/AuraSunDial/pipelines)
 
 A simple Sponge Plugin to synchronize the server/in-game time to the realtime
