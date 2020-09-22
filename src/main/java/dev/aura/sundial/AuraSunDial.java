@@ -32,13 +32,12 @@ import org.spongepowered.api.world.gamerule.DefaultGameRules;
 import org.spongepowered.api.world.storage.WorldProperties;
 
 @Plugin(
-  id = AuraSunDial.ID,
-  name = AuraSunDial.NAME,
-  version = AuraSunDial.VERSION,
-  description = AuraSunDial.DESCRIPTION,
-  url = AuraSunDial.URL,
-  authors = {AuraSunDial.AUTHOR_BRAINSTONE}
-)
+    id = AuraSunDial.ID,
+    name = AuraSunDial.NAME,
+    version = AuraSunDial.VERSION,
+    description = AuraSunDial.DESCRIPTION,
+    url = AuraSunDial.URL,
+    authors = {AuraSunDial.AUTHOR_BRAINSTONE})
 public class AuraSunDial {
   public static final String ID = "@id@";
   public static final String NAME = "@name@";

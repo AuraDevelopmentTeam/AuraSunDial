@@ -111,8 +111,7 @@ public class CommandRealTime implements CommandExecutor {
     final boolean mode = args.<Boolean>getOne(PARAM_MODE).get();
     final String permission = BASE_PERMISSION + '.' + (mode ? "enable" : "disable") + '.';
     final List<String> worldNames =
-        worlds
-            .stream()
+        worlds.stream()
             .map(WorldProperties::getWorldName)
             .filter(world -> src.hasPermission(permission + world))
             .collect(Collectors.toList());
