@@ -203,7 +203,7 @@ public class AuraSunDial {
       actualWorldTime = properties.getWorldTime();
 
       // Looks for skipped nights. Of course only relevant when we're not syncing the time
-      if (!syncTime && (actualWorldTime == 0)) {
+      if (!syncTime && (actualWorldTime == 0) && (targetWorldTime > 10)) {
         timeCalculator.addPerWorldOffset(world, -targetWorldTime);
         targetWorldTime = 0;
       }
