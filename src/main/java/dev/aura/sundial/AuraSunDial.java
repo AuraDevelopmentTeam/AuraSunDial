@@ -59,7 +59,7 @@ public class AuraSunDial {
 
   @Inject @NonNull protected Logger logger;
   @NonNull protected Config config;
-  protected TimeCalculator timeCalculator;
+  @Getter protected TimeCalculator timeCalculator;
   protected Task timeTask;
 
   public static Logger getLogger() {
@@ -107,6 +107,10 @@ public class AuraSunDial {
     loadConfig();
 
     timeCalculator = new TimeCalculator(config.getOffset(), config.getSpeedModifier());
+
+    if (!config.getSyncWithRealTime()) {
+      config.getActiveWorlds().forEach(timeCalculator::updatePerWorldOffset);
+    }
 
     CommandRealTime.register(this);
 
@@ -188,14 +192,28 @@ public class AuraSunDial {
   private void setTime() {
     if (config == null) return;
 
+    final boolean syncTime = config.getSyncWithRealTime();
     WorldProperties properties;
-    final long worldTime = timeCalculator.getWorldTime();
+    long targetWorldTime;
+    long actualWorldTime;
 
     for (World world : config.getActiveWorlds()) {
       properties = world.getWorldStorage().getWorldProperties();
+      targetWorldTime = timeCalculator.getWorldTime(world);
+      actualWorldTime = properties.getWorldTime();
 
-      properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
-      properties.setWorldTime(worldTime);
+      // Looks for skipped nights. Of course only relevant when we're not syncing the time
+      if (!syncTime && (actualWorldTime == 0)) {
+        timeCalculator.addPerWorldOffset(world, -targetWorldTime);
+        targetWorldTime = 0;
+      }
+
+      // Checks if the gamerule is either not present or not set to "false"
+      if (!properties
+          .getGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE)
+          .filter("false"::equals)
+          .isPresent()) properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
+      if (actualWorldTime != targetWorldTime) properties.setWorldTime(targetWorldTime);
     }
   }
 }
