@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
 import dev.aura.sundial.util.TimeCalculator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.function.Consumer;
 import lombok.Getter;
@@ -48,6 +49,10 @@ public class AuraSunDial {
   private static final TypeToken<Config> configToken = TypeToken.of(Config.class);
 
   @NonNull @Getter private static AuraSunDial instance = null;
+
+  @SuppressFBWarnings(
+      value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+      justification = "Metrics instance needs to be kept alive")
   protected MetricsLite2 metrics;
 
   @Inject protected GuiceObjectMapperFactory factory;
