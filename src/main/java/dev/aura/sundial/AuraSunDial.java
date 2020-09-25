@@ -21,7 +21,6 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
-import org.spongepowered.api.event.game.state.GameConstructionEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
@@ -49,7 +48,7 @@ public class AuraSunDial {
   private static final TypeToken<Config> configToken = TypeToken.of(Config.class);
 
   @NonNull @Getter private static AuraSunDial instance = null;
-  @Inject protected MetricsLite2 metrics;
+  protected MetricsLite2 metrics;
 
   @Inject protected GuiceObjectMapperFactory factory;
 
@@ -61,6 +60,17 @@ public class AuraSunDial {
   @NonNull protected Config config;
   protected TimeCalculator timeCalculator;
   protected Task timeTask;
+
+  @Inject
+  public AuraSunDial(MetricsLite2.Factory metricsFactory) {
+    if (instance != null) throw new IllegalStateException("instance cannot be instantiated twice");
+
+    instance = this;
+
+    // Make sure logger is initialized
+    logger = getLogger();
+    metrics = metricsFactory.make(1534);
+  }
 
   public static Logger getLogger() {
     if ((instance == null) || (instance.logger == null)) return NOPLogger.NOP_LOGGER;
@@ -75,16 +85,6 @@ public class AuraSunDial {
     if (object != null) {
       method.accept(object);
     }
-  }
-
-  @Listener
-  public void onContstruct(GameConstructionEvent event) {
-    if (instance != null) throw new IllegalStateException("instance cannot be instantiated twice");
-
-    instance = this;
-
-    // Make sure logger is initialized
-    logger = getLogger();
   }
 
   @Listener
