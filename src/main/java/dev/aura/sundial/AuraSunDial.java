@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
 import dev.aura.sundial.util.TimeCalculator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.function.Consumer;
 import lombok.Getter;
@@ -21,7 +22,6 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
-import org.spongepowered.api.event.game.state.GameConstructionEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
@@ -49,7 +49,11 @@ public class AuraSunDial {
   private static final TypeToken<Config> configToken = TypeToken.of(Config.class);
 
   @NonNull @Getter private static AuraSunDial instance = null;
-  @Inject protected MetricsLite2 metrics;
+
+  @SuppressFBWarnings(
+      value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+      justification = "Metrics instance needs to be kept alive")
+  protected MetricsLite2 metrics;
 
   @Inject protected GuiceObjectMapperFactory factory;
 
@@ -61,6 +65,17 @@ public class AuraSunDial {
   @NonNull protected Config config;
   @Getter protected TimeCalculator timeCalculator;
   protected Task timeTask;
+
+  @Inject
+  public AuraSunDial(MetricsLite2.Factory metricsFactory) {
+    if (instance != null) throw new IllegalStateException("instance cannot be instantiated twice");
+
+    instance = this;
+
+    // Make sure logger is initialized
+    logger = getLogger();
+    metrics = metricsFactory.make(1534);
+  }
 
   public static Logger getLogger() {
     if ((instance == null) || (instance.logger == null)) return NOPLogger.NOP_LOGGER;
@@ -75,16 +90,6 @@ public class AuraSunDial {
     if (object != null) {
       method.accept(object);
     }
-  }
-
-  @Listener
-  public void onContstruct(GameConstructionEvent event) {
-    if (instance != null) throw new IllegalStateException("instance cannot be instantiated twice");
-
-    instance = this;
-
-    // Make sure logger is initialized
-    logger = getLogger();
   }
 
   @Listener
