@@ -198,6 +198,7 @@ public class AuraSunDial {
     if (config == null) return;
 
     final boolean syncTime = config.getSyncWithRealTime();
+    final String targetDayLightCycleState = syncTime ? "false" : "true";
     WorldProperties properties;
     long targetWorldTime;
     long actualWorldTime;
@@ -213,11 +214,12 @@ public class AuraSunDial {
         targetWorldTime = 0;
       }
 
-      // Checks if the gamerule is either not present or not set to "false"
+      // Checks if the gamerule is either not present or not set to targetDayLightCycleState
       if (!properties
           .getGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE)
-          .filter("false"::equals)
-          .isPresent()) properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
+          .filter(targetDayLightCycleState::equals)
+          .isPresent())
+        properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, targetDayLightCycleState);
       if (actualWorldTime != targetWorldTime) properties.setWorldTime(targetWorldTime);
     }
   }
