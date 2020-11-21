@@ -1,9 +1,5 @@
 apply from: "GradleCommon/common.gradle"
 
-jacoco {
-    toolVersion = "0.8.1"
-}
-
 repositories {
     // Additional repositories
 }
