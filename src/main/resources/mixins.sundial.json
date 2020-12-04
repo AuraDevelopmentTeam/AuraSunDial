@@ -1,7 +1,7 @@
 {
     "required": true,
     "minVersion": "0.8.0",
-    "package": "${group}.${id}.mixin",
+    "package": "${group}.mixin",
     "refmap": "mixins.${id}.refmap.json",
     "target": "@env(DEFAULT)",
     "compatibilityLevel": "JAVA_8",
