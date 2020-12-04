@@ -4,8 +4,11 @@ import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
+import dev.aura.sundial.event.TimeSkipEvent;
 import dev.aura.sundial.util.TimeCalculator;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.NonNull;
@@ -18,6 +21,7 @@ import org.bstats.sponge.MetricsLite2;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandManager;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
@@ -25,6 +29,7 @@ import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.scheduler.Scheduler;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.gamerule.DefaultGameRules;
@@ -58,7 +63,8 @@ public class AuraSunDial {
   @Inject @NonNull protected Logger logger;
   @NonNull protected Config config;
   @Getter protected TimeCalculator timeCalculator;
-  protected Task timeTask;
+
+  protected List<Object> eventListeners = new LinkedList<>();
 
   @Inject
   public AuraSunDial(MetricsLite2.Factory metricsFactory) {
@@ -113,6 +119,9 @@ public class AuraSunDial {
     }
 
     CommandRealTime.register(this);
+    logger.debug("Registered commands");
+
+    logger.debug("Registered events");
 
     logger.info("Loaded successfully!");
   }
@@ -124,7 +133,7 @@ public class AuraSunDial {
 
   public void onLoadComplete() {
     try {
-      timeTask =
+      Task timeTask =
           Task.builder()
               .execute(this::setTime)
               .intervalTicks(1)
@@ -138,7 +147,7 @@ public class AuraSunDial {
   }
 
   @Listener
-  public void onReload(GameReloadEvent event) throws IOException, ObjectMappingException {
+  public void onReload(GameReloadEvent event) throws Exception {
     // Unregistering everything
     onStop();
 
@@ -150,21 +159,28 @@ public class AuraSunDial {
   }
 
   @Listener
-  public void onStop(GameStoppingEvent event) throws IOException, ObjectMappingException {
+  public void onStop(GameStoppingEvent event) throws Exception {
     onStop();
   }
 
-  public void onStop() throws IOException, ObjectMappingException {
+  public void onStop() throws Exception {
     logger.info("Shutting down " + NAME + " Version " + VERSION);
 
     Sponge.getCommandManager().getOwnedBy(this).forEach(Sponge.getCommandManager()::removeMapping);
 
     timeCalculator = null;
 
-    callSafely(timeTask, Task::cancel);
-    timeTask = null;
+    stopTasks();
+    logger.debug("Stopped tasks");
+
+    removeCommands();
+    logger.debug("Unregistered commands");
+
+    removeEventListeners();
+    logger.debug("Unregistered events");
 
     config = null;
+    logger.debug("Unloaded config");
 
     logger.info("Unloaded successfully!");
   }
@@ -187,6 +203,36 @@ public class AuraSunDial {
     logger.debug("Saving/Formatting config...");
     node.setValue(configToken, config);
     loader.save(node);
+  }
+
+  private void addEventListener(Object listener) {
+    eventListeners.add(listener);
+
+    Sponge.getEventManager().registerListeners(this, listener);
+  }
+
+  private void removeCommands() {
+    final CommandManager commandManager = Sponge.getCommandManager();
+
+    commandManager.getOwnedBy(this).forEach(commandManager::removeMapping);
+  }
+
+  private void stopTasks() {
+    final Scheduler scheduler = Sponge.getScheduler();
+
+    scheduler.getScheduledTasks(this).forEach(Task::cancel);
+  }
+
+  private void removeEventListeners() throws Exception {
+    for (Object listener : eventListeners) {
+      Sponge.getEventManager().unregisterListeners(listener);
+
+      if (listener instanceof AutoCloseable) {
+        ((AutoCloseable) listener).close();
+      }
+    }
+
+    eventListeners.clear();
   }
 
   public void processWakeUp(World world) {
