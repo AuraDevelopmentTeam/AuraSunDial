@@ -23,12 +23,15 @@ import org.slf4j.helpers.NOPLogger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandManager;
 import org.spongepowered.api.config.DefaultConfig;
+import org.spongepowered.api.event.CauseStackManager.StackFrame;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.cause.EventContextKeys;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.Scheduler;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.world.World;
@@ -53,6 +56,7 @@ public class AuraSunDial {
   private static final TypeToken<Config> configToken = TypeToken.of(Config.class);
 
   @NonNull @Getter private static AuraSunDial instance = null;
+  @Inject @Getter private PluginContainer container;
 
   @Inject protected GuiceObjectMapperFactory factory;
 
@@ -248,18 +252,23 @@ public class AuraSunDial {
     long targetWorldTime;
     long actualWorldTime;
 
-    for (World world : config.getActiveWorlds()) {
-      properties = world.getWorldStorage().getWorldProperties();
-      targetWorldTime = timeCalculator.getWorldTime(world);
-      actualWorldTime = properties.getWorldTime();
+    try (final StackFrame frame = Sponge.getCauseStackManager().pushCauseFrame()) {
+      frame.addContext(EventContextKeys.PLUGIN, container);
+      frame.pushCause(this);
 
-      // Checks if the gamerule is either not present or not set to targetDayLightCycleState
-      if (!properties
-          .getGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE)
-          .filter(targetDayLightCycleState::equals)
-          .isPresent())
-        properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, targetDayLightCycleState);
-      if (actualWorldTime != targetWorldTime) properties.setWorldTime(targetWorldTime);
+      for (World world : config.getActiveWorlds()) {
+        properties = world.getWorldStorage().getWorldProperties();
+        targetWorldTime = timeCalculator.getWorldTime(world);
+        actualWorldTime = properties.getWorldTime();
+
+        // Checks if the gamerule is either not present or not set to targetDayLightCycleState
+        if (!properties
+            .getGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE)
+            .filter(targetDayLightCycleState::equals)
+            .isPresent())
+          properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, targetDayLightCycleState);
+        if (actualWorldTime != targetWorldTime) properties.setWorldTime(targetWorldTime);
+      }
     }
   }
 }
