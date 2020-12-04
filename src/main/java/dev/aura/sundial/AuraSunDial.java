@@ -189,11 +189,15 @@ public class AuraSunDial {
     loader.save(node);
   }
 
+  public void processWakeUp(World world) {
+    if (!config.getSyncWithRealTime() && config.getActiveWorlds().contains(world))
+      timeCalculator.addPerWorldOffset(world, -timeCalculator.getWorldTime(world));
+  }
+
   private void setTime() {
     if (config == null) return;
 
-    final boolean syncTime = config.getSyncWithRealTime();
-    final String targetDayLightCycleState = syncTime ? "false" : "true";
+    final String targetDayLightCycleState = config.getSyncWithRealTime() ? "false" : "true";
     WorldProperties properties;
     long targetWorldTime;
     long actualWorldTime;
@@ -202,12 +206,6 @@ public class AuraSunDial {
       properties = world.getWorldStorage().getWorldProperties();
       targetWorldTime = timeCalculator.getWorldTime(world);
       actualWorldTime = properties.getWorldTime();
-
-      // Looks for skipped nights. Of course only relevant when we're not syncing the time
-      if (!syncTime && (actualWorldTime == 0) && (targetWorldTime > 10)) {
-        timeCalculator.addPerWorldOffset(world, -targetWorldTime);
-        targetWorldTime = 0;
-      }
 
       // Checks if the gamerule is either not present or not set to targetDayLightCycleState
       if (!properties
