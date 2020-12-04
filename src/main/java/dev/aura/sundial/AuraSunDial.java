@@ -4,7 +4,6 @@ import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
-import dev.aura.sundial.event.TimeSkipEvent;
 import dev.aura.sundial.util.TimeCalculator;
 import java.io.IOException;
 import java.util.LinkedList;
