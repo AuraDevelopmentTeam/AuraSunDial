@@ -27,9 +27,6 @@ public class Config {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class General {
-    @Setting(comment = "Enable debug logging")
-    private boolean debug = false;
-
     @Setting(
         comment =
             "Select which language from the lang dir to use.\n"
