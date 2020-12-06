@@ -8,7 +8,6 @@ import dev.aura.sundial.util.TimeCalculator;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.NonNull;
 import ninja.leaping.configurate.ConfigurationOptions;
@@ -86,12 +85,6 @@ public class AuraSunDial {
 
   public static Config getConfig() {
     return instance.config;
-  }
-
-  protected static <T> void callSafely(T object, Consumer<T> method) {
-    if (object != null) {
-      method.accept(object);
-    }
   }
 
   @Listener
