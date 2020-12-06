@@ -13,7 +13,11 @@ import org.spongepowered.api.text.serializer.TextSerializers;
 public enum PluginMessages implements Message {
   // Admin Messages
   ADMIN_RELOAD_SUCCESSFUL("reloadSuccessful"),
-  ADMIN_RELOAD_NOT_SUCCESSFUL("reloadNotSuccessful");
+  ADMIN_RELOAD_NOT_SUCCESSFUL("reloadNotSuccessful"),
+  // World Messages
+  ERROR_SPECIFY_WORLD("errorSpecifyWorld"),
+  ENABLE_REALTIME("enableRealtime"),
+  DISABLE_REALTIME("disableRealtime");
 
   @Getter private final String stringPath;
 

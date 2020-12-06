@@ -2,6 +2,7 @@ package dev.aura.sundial.command;
 
 import com.google.common.collect.ImmutableMap;
 import dev.aura.sundial.AuraSunDial;
+import dev.aura.sundial.message.PluginMessages;
 import dev.aura.sundial.permission.PermissionRegistry;
 import java.io.IOException;
 import java.util.Collection;
@@ -67,9 +68,7 @@ public class CommandRealTime implements CommandExecutor {
       worlds = Sponge.getGame().getServer().getAllWorldProperties();
     } else if (src instanceof Locatable) {
       worlds = Collections.singleton(((Player) src).getWorld().getProperties());
-    } else
-      throw new CommandException(
-          Text.of("You have to enter a world when using this from the console!"), true);
+    } else throw new CommandException(PluginMessages.ERROR_SPECIFY_WORLD.getMessage(), true);
 
     final boolean mode = args.<Boolean>getOne(PARAM_MODE).get();
     final String permission = REALTIME_PERMISSION + '.' + (mode ? "enable" : "disable") + '.';
@@ -90,10 +89,9 @@ public class CommandRealTime implements CommandExecutor {
 
     if (worldNames.size() > 0) {
       src.sendMessage(
-          Text.of(
-              (mode ? "Enabled" : "Disabled")
-                  + " realtime on these worlds: "
-                  + String.join(", ", worldNames)));
+          (mode ? PluginMessages.ENABLE_REALTIME : PluginMessages.DISABLE_REALTIME)
+              .getMessage(ImmutableMap.of("worlds", String.join(", ", worldNames))));
+
     } else throw new CommandPermissionException();
 
     return CommandResult.successCount(worldNames.size());

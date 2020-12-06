@@ -30,3 +30,10 @@
 ####################################################################################################
 reloadSuccessful: "&aAuraSunDial reloaded successfully!"
 reloadNotSuccessful: "&cError while reloading the plugin: %error%\n&cSee console for a more detailed error message.\n&cThe plugin may be in a severely corrupted state. It's best to restart the server!"
+
+####################################################################################################
+# World Messages
+####################################################################################################
+errorSpecifyWorld: "&cYou have to speficy a world when using this command from the console!"
+enableRealtime: "Enabled realtime on these worlds: %worlds%"
+disableRealtime: "Disabled realtime on these worlds: %worlds%"
