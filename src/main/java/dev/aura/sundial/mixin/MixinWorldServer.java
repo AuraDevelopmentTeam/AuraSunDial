@@ -12,6 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinWorldServer {
   @Inject(method = "wakeAllPlayers", at = @At("RETURN"))
   protected void onWakeAllPlayers(CallbackInfo ci) {
-    AuraSunDial.getInstance().processWakeUp((World) this);
+    AuraSunDial.getInstance().processTimeSkip((World) this, 0);
   }
 }

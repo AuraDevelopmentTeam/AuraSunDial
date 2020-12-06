@@ -236,15 +236,15 @@ public class AuraSunDial {
     eventListeners.clear();
   }
 
-  public void processWakeUp(World world) {
+  public void processTimeSkip(World world, long newTime) {
     if (!config.getSyncWithRealTime() && config.getActiveWorlds().contains(world))
-      timeCalculator.addPerWorldOffset(world, -timeCalculator.getWorldTime(world));
+      timeCalculator.addPerWorldOffset(world, newTime - timeCalculator.getWorldTime(world));
   }
 
   private void setTime() {
     if (config == null) return;
 
-    final String targetDayLightCycleState = config.getSyncWithRealTime() ? "false" : "true";
+    final String targetDayLightCycleState = "false";
     WorldProperties properties;
     long targetWorldTime;
     long actualWorldTime;
