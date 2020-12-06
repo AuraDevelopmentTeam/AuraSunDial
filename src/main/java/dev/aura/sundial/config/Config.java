@@ -1,5 +1,6 @@
 package dev.aura.sundial.config;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,27 +37,41 @@ public class Config {
   @Getter
   private double speedModifier = 1.0;
 
+  private ImmutableList<World> activeWorldObjects = null;
+
   private static List<String> getWorldNames() {
     return Sponge.getGame().getServer().getWorlds().stream()
         .map(World::getName)
         .collect(Collectors.toList());
   }
 
-  public List<World> getActiveWorlds() {
-    return activeWorlds.stream()
-        .map(Sponge.getGame().getServer()::getWorld)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toList());
+  public ImmutableList<World> getActiveWorlds() {
+    synchronized (activeWorlds) {
+      if (activeWorldObjects == null)
+        activeWorldObjects =
+            activeWorlds.stream()
+                .map(Sponge.getGame().getServer()::getWorld)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(ImmutableList.toImmutableList());
+    }
+
+    return activeWorldObjects;
   }
 
   public void setWorld(String world, boolean enabled) {
     boolean contains = activeWorlds.contains(world);
 
     if (!contains && enabled) {
-      activeWorlds.add(world);
+      synchronized (activeWorlds) {
+        activeWorlds.add(world);
+        activeWorldObjects = null;
+      }
     } else if (contains && !enabled) {
-      activeWorlds.remove(world);
+      synchronized (activeWorlds) {
+        activeWorlds.remove(world);
+        activeWorldObjects = null;
+      }
     }
   }
 }
