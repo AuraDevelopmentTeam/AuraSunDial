@@ -24,3 +24,9 @@
 # Inheritance
 ####################################################################################################
 inherit: en_US
+
+####################################################################################################
+# Admin Messages
+####################################################################################################
+reloadSuccessful: "&aAuraSunDial is succesvol herladen!"
+reloadNotSuccessful: "&cFout bij het herladen van de plugin: %error%\n&cKijk in het console voor een meer gedetailleerd foutmeldingsbericht.\n&cDe plugin werkt mogelijk niet goed meer. Je kunt het beste je server opnieuw opstarten!"

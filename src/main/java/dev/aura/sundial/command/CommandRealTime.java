@@ -39,6 +39,7 @@ public class CommandRealTime implements CommandExecutor {
         CommandSpec.builder()
             .description(Text.of("Enables or disables synchronizing the world time with realtime."))
             .executor(new CommandRealTime())
+            .child(CommandReload.create(plugin), "reload", "r", "rl", "re", "rel")
             .arguments(
                 GenericArguments.choices(
                     Text.of(PARAM_MODE),

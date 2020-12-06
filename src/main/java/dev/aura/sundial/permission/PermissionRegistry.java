@@ -2,6 +2,7 @@ package dev.aura.sundial.permission;
 
 import dev.aura.sundial.AuraSunDial;
 import dev.aura.sundial.command.CommandRealTime;
+import dev.aura.sundial.command.CommandReload;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.spongepowered.api.Sponge;
@@ -22,6 +23,11 @@ public class PermissionRegistry {
   public void registerPermissions() {
     registerPermission(BASE, PermissionDescription.ROLE_ADMIN);
     registerPermission(COMMAND, "Permission for all commands", PermissionDescription.ROLE_ADMIN);
+
+    registerPermission(
+        CommandReload.RELOAD_PERMISSION,
+        "Permission to be able to reload the plugin",
+        PermissionDescription.ROLE_ADMIN);
 
     registerPermission(
         CommandRealTime.REALTIME_PERMISSION,

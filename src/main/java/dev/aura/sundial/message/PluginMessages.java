@@ -11,7 +11,9 @@ import org.spongepowered.api.text.serializer.TextSerializers;
 
 @RequiredArgsConstructor
 public enum PluginMessages implements Message {
-  ;
+  // Admin Messages
+  ADMIN_RELOAD_SUCCESSFUL("reloadSuccessful"),
+  ADMIN_RELOAD_NOT_SUCCESSFUL("reloadNotSuccessful");
 
   @Getter private final String stringPath;
 
