@@ -2,6 +2,7 @@ package dev.aura.sundial.command;
 
 import com.google.common.collect.ImmutableMap;
 import dev.aura.sundial.AuraSunDial;
+import dev.aura.sundial.permission.PermissionRegistry;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,15 +21,14 @@ import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.service.permission.PermissionDescription;
-import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Locatable;
 import org.spongepowered.api.world.storage.WorldProperties;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class CommandRealTime implements CommandExecutor {
-  public static final String BASE_PERMISSION = "sundial.command.realtime";
+  public static final String BASE_PERMISSION = PermissionRegistry.COMMAND;
+  public static final String REALTIME_PERMISSION = BASE_PERMISSION + ".realtime";
 
   private static final String PARAM_MODE = "mode";
   private static final String PARAM_WORLD = "world";
@@ -54,44 +54,6 @@ public class CommandRealTime implements CommandExecutor {
             .build();
 
     Sponge.getCommandManager().register(plugin, realTime, "realtime", "rt", "sundial", "sd");
-
-    Sponge.getServiceManager()
-        .provide(PermissionService.class)
-        .ifPresent(
-            permissionService -> {
-              permissionService
-                  .newDescriptionBuilder(plugin)
-                  .id(BASE_PERMISSION)
-                  .description(Text.of("Allows the user to execute the realtime command."))
-                  .assign(PermissionDescription.ROLE_STAFF, true)
-                  .register();
-              permissionService
-                  .newDescriptionBuilder(plugin)
-                  .id(BASE_PERMISSION + ".enable")
-                  .description(Text.of("Allows the user to to enable realtime on all worlds."))
-                  .assign(PermissionDescription.ROLE_STAFF, true)
-                  .register();
-              permissionService
-                  .newDescriptionBuilder(plugin)
-                  .id(BASE_PERMISSION + ".enable.<world>")
-                  .description(
-                      Text.of("Allows the user to to enable realtime on the specific world."))
-                  .assign(PermissionDescription.ROLE_STAFF, true)
-                  .register();
-              permissionService
-                  .newDescriptionBuilder(plugin)
-                  .id(BASE_PERMISSION + ".disable")
-                  .description(Text.of("Allows the user to to disable realtime on all worlds."))
-                  .assign(PermissionDescription.ROLE_STAFF, true)
-                  .register();
-              permissionService
-                  .newDescriptionBuilder(plugin)
-                  .id(BASE_PERMISSION + ".disable.<world>")
-                  .description(
-                      Text.of("Allows the user to to disable realtime on the specific world."))
-                  .assign(PermissionDescription.ROLE_STAFF, true)
-                  .register();
-            });
   }
 
   @Override
@@ -99,7 +61,7 @@ public class CommandRealTime implements CommandExecutor {
     Collection<WorldProperties> worlds;
 
     if (args.hasAny(PARAM_WORLD)) {
-      worlds = args.<WorldProperties>getAll(PARAM_WORLD);
+      worlds = args.getAll(PARAM_WORLD);
     } else if (args.hasAny(PARAM_ALL)) {
       worlds = Sponge.getGame().getServer().getAllWorldProperties();
     } else if (src instanceof Locatable) {
@@ -109,14 +71,15 @@ public class CommandRealTime implements CommandExecutor {
           Text.of("You have to enter a world when using this from the console!"), true);
 
     final boolean mode = args.<Boolean>getOne(PARAM_MODE).get();
-    final String permission = BASE_PERMISSION + '.' + (mode ? "enable" : "disable") + '.';
+    final String permission = REALTIME_PERMISSION + '.' + (mode ? "enable" : "disable") + '.';
     final List<String> worldNames =
         worlds.stream()
             .map(WorldProperties::getWorldName)
             .filter(world -> src.hasPermission(permission + world))
             .collect(Collectors.toList());
 
-    worldNames.stream().forEach(world -> AuraSunDial.getConfig().setWorld(world, mode));
+    worldNames.forEach(
+        world -> AuraSunDial.getConfig().getTimeModification().setWorld(world, mode));
 
     try {
       AuraSunDial.getInstance().saveConfig();
@@ -129,7 +92,7 @@ public class CommandRealTime implements CommandExecutor {
           Text.of(
               (mode ? "Enabled" : "Disabled")
                   + " realtime on these worlds: "
-                  + worldNames.stream().collect(Collectors.joining(", "))));
+                  + String.join(", ", worldNames)));
     } else throw new CommandPermissionException();
 
     return CommandResult.successCount(worldNames.size());

@@ -4,8 +4,11 @@ import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
+import dev.aura.sundial.permission.PermissionRegistry;
 import dev.aura.sundial.util.TimeCalculator;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.NonNull;
@@ -18,6 +21,7 @@ import org.bstats.sponge.MetricsLite2;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
@@ -49,14 +53,16 @@ public class AuraSunDial {
 
   @NonNull @Getter private static AuraSunDial instance = null;
 
+  @Inject @NonNull protected Logger logger;
+
   @Inject protected GuiceObjectMapperFactory factory;
 
   @Inject
   @DefaultConfig(sharedRoot = false)
   protected ConfigurationLoader<CommentedConfigurationNode> loader;
 
-  @Inject @NonNull protected Logger logger;
   @NonNull protected Config config;
+  protected PermissionRegistry permissionRegistry;
   protected TimeCalculator timeCalculator;
   protected Task timeTask;
 
@@ -107,6 +113,12 @@ public class AuraSunDial {
     loadConfig();
 
     timeCalculator = new TimeCalculator(config.getOffset(), config.getSpeedModifier());
+    if (permissionRegistry == null) {
+      permissionRegistry = new PermissionRegistry(this);
+      permissionRegistry.registerPermissions();
+      logger.debug("Registered permissions");
+    }
+
 
     CommandRealTime.register(this);
 
