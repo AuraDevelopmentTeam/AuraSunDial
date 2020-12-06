@@ -2,6 +2,8 @@ package dev.aura.sundial;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import dev.aura.lib.messagestranslator.MessagesTranslator;
+import dev.aura.lib.messagestranslator.PluginMessagesTranslator;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
 import dev.aura.sundial.permission.PermissionRegistry;
@@ -61,8 +63,14 @@ public class AuraSunDial {
   @DefaultConfig(sharedRoot = false)
   protected ConfigurationLoader<CommentedConfigurationNode> loader;
 
+  @Inject
+  @ConfigDir(sharedRoot = false)
+  @NonNull
+  protected Path configDir;
+
   @NonNull protected Config config;
   protected PermissionRegistry permissionRegistry;
+  @NonNull protected MessagesTranslator translator;
   protected TimeCalculator timeCalculator;
   protected Task timeTask;
 
@@ -83,8 +91,16 @@ public class AuraSunDial {
     else return instance.logger;
   }
 
+  public static Path getConfigDir() {
+    return instance.configDir;
+  }
+
   public static Config getConfig() {
     return instance.config;
+  }
+
+  public static MessagesTranslator getTranslator() {
+    return instance.translator;
   }
 
   protected static <T> void callSafely(T object, Consumer<T> method) {
@@ -112,13 +128,19 @@ public class AuraSunDial {
 
     loadConfig();
 
-    timeCalculator = new TimeCalculator(config.getOffset(), config.getSpeedModifier());
     if (permissionRegistry == null) {
       permissionRegistry = new PermissionRegistry(this);
       permissionRegistry.registerPermissions();
       logger.debug("Registered permissions");
     }
 
+    translator =
+        new PluginMessagesTranslator(
+            new File(getConfigDir().toFile(), "lang"), config.getGeneral().getLanguage(), this, ID);
+    timeCalculator =
+        new TimeCalculator(
+            config.getTimeModification().getOffset(),
+            config.getTimeModification().getSpeedModifier());
 
     CommandRealTime.register(this);
 
@@ -203,7 +225,7 @@ public class AuraSunDial {
     WorldProperties properties;
     final long worldTime = timeCalculator.getWorldTime();
 
-    for (World world : config.getActiveWorlds()) {
+    for (World world : config.getTimeModification().getActiveWorlds()) {
       properties = world.getWorldStorage().getWorldProperties();
 
       properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
