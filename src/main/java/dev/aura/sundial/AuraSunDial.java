@@ -11,7 +11,8 @@ import dev.aura.sundial.util.TimeCalculator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.function.Consumer;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.Getter;
 import lombok.NonNull;
 import ninja.leaping.configurate.ConfigurationOptions;
@@ -23,6 +24,7 @@ import org.bstats.sponge.MetricsLite2;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandManager;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
@@ -31,6 +33,8 @@ import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameLoadCompleteEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.plugin.PluginContainer;
+import org.spongepowered.api.scheduler.Scheduler;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.gamerule.DefaultGameRules;
@@ -55,6 +59,7 @@ public class AuraSunDial {
 
   @NonNull @Getter private static AuraSunDial instance = null;
 
+  @Inject @Getter private PluginContainer container;
   @Inject @NonNull protected Logger logger;
 
   @Inject protected GuiceObjectMapperFactory factory;
@@ -71,8 +76,9 @@ public class AuraSunDial {
   @NonNull protected Config config;
   protected PermissionRegistry permissionRegistry;
   @NonNull protected MessagesTranslator translator;
-  protected TimeCalculator timeCalculator;
-  protected Task timeTask;
+  @Getter protected TimeCalculator timeCalculator;
+
+  protected List<Object> eventListeners = new LinkedList<>();
 
   @Inject
   public AuraSunDial(MetricsLite2.Factory metricsFactory) {
@@ -101,12 +107,6 @@ public class AuraSunDial {
 
   public static MessagesTranslator getTranslator() {
     return instance.translator;
-  }
-
-  protected static <T> void callSafely(T object, Consumer<T> method) {
-    if (object != null) {
-      method.accept(object);
-    }
   }
 
   @Listener
@@ -142,7 +142,14 @@ public class AuraSunDial {
             config.getTimeModification().getOffset(),
             config.getTimeModification().getSpeedModifier());
 
+    if (!config.getTimeModification().getSyncWithRealTime()) {
+      config.getTimeModification().getActiveWorlds().forEach(timeCalculator::updatePerWorldOffset);
+    }
+
     CommandRealTime.register(this);
+    logger.debug("Registered commands");
+
+    logger.debug("Registered events");
 
     logger.info("Loaded successfully!");
   }
@@ -154,7 +161,7 @@ public class AuraSunDial {
 
   public void onLoadComplete() {
     try {
-      timeTask =
+      Task timeTask =
           Task.builder()
               .execute(this::setTime)
               .intervalTicks(1)
@@ -168,7 +175,7 @@ public class AuraSunDial {
   }
 
   @Listener
-  public void onReload(GameReloadEvent event) throws IOException, ObjectMappingException {
+  public void onReload(GameReloadEvent event) throws Exception {
     // Unregistering everything
     onStop();
 
@@ -180,21 +187,28 @@ public class AuraSunDial {
   }
 
   @Listener
-  public void onStop(GameStoppingEvent event) throws IOException, ObjectMappingException {
+  public void onStop(GameStoppingEvent event) throws Exception {
     onStop();
   }
 
-  public void onStop() throws IOException, ObjectMappingException {
+  public void onStop() throws Exception {
     logger.info("Shutting down " + NAME + " Version " + VERSION);
 
     Sponge.getCommandManager().getOwnedBy(this).forEach(Sponge.getCommandManager()::removeMapping);
 
     timeCalculator = null;
 
-    callSafely(timeTask, Task::cancel);
-    timeTask = null;
+    stopTasks();
+    logger.debug("Stopped tasks");
+
+    removeCommands();
+    logger.debug("Unregistered commands");
+
+    removeEventListeners();
+    logger.debug("Unregistered events");
 
     config = null;
+    logger.debug("Unloaded config");
 
     logger.info("Unloaded successfully!");
   }
@@ -219,17 +233,62 @@ public class AuraSunDial {
     loader.save(node);
   }
 
+  private void addEventListener(Object listener) {
+    eventListeners.add(listener);
+
+    Sponge.getEventManager().registerListeners(this, listener);
+  }
+
+  private void removeCommands() {
+    final CommandManager commandManager = Sponge.getCommandManager();
+
+    commandManager.getOwnedBy(this).forEach(commandManager::removeMapping);
+  }
+
+  private void stopTasks() {
+    final Scheduler scheduler = Sponge.getScheduler();
+
+    scheduler.getScheduledTasks(this).forEach(Task::cancel);
+  }
+
+  private void removeEventListeners() throws Exception {
+    for (Object listener : eventListeners) {
+      Sponge.getEventManager().unregisterListeners(listener);
+
+      if (listener instanceof AutoCloseable) {
+        ((AutoCloseable) listener).close();
+      }
+    }
+
+    eventListeners.clear();
+  }
+
+  public void processTimeSkip(World world, long newTime) {
+    if (!config.getTimeModification().getSyncWithRealTime()
+        && config.getTimeModification().getActiveWorlds().contains(world))
+      timeCalculator.addPerWorldOffset(world, newTime - timeCalculator.getWorldTime(world));
+  }
+
   private void setTime() {
     if (config == null) return;
 
+    final String targetDayLightCycleState = "false";
     WorldProperties properties;
-    final long worldTime = timeCalculator.getWorldTime();
+    long targetWorldTime;
+    long actualWorldTime;
 
     for (World world : config.getTimeModification().getActiveWorlds()) {
       properties = world.getWorldStorage().getWorldProperties();
+      targetWorldTime = timeCalculator.getWorldTime(world);
+      actualWorldTime = properties.getWorldTime();
 
-      properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, "false");
-      properties.setWorldTime(worldTime);
+      // Checks if the gamerule is either not present or not set to targetDayLightCycleState
+      if (!properties
+          .getGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE)
+          .filter(targetDayLightCycleState::equals)
+          .isPresent())
+        properties.setGameRule(DefaultGameRules.DO_DAYLIGHT_CYCLE, targetDayLightCycleState);
+      if (actualWorldTime != targetWorldTime) properties.setWorldTime(targetWorldTime);
     }
   }
 }
