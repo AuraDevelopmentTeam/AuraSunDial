@@ -30,12 +30,14 @@ public abstract class MixinWorldInfo implements WorldProperties {
   }
 
   private void onSetWorldTimeCommon(long time) {
+    // Filtering out our own calls
     if (Sponge.getCauseStackManager()
         .getCurrentCause()
         .first(PluginContainer.class)
         .map(PluginContainer::getId)
         .filter(AuraSunDial.ID::equals)
         .isPresent()) return;
+    // Filtering out natural causes/game mechanics like the update per tick
     if (Sponge.getCauseStackManager().getCurrentCause().containsType(Game.class)) return;
 
     final World world =

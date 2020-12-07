@@ -6,6 +6,7 @@ import dev.aura.lib.messagestranslator.MessagesTranslator;
 import dev.aura.lib.messagestranslator.PluginMessagesTranslator;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
+import dev.aura.sundial.config.ConfigMigrations;
 import dev.aura.sundial.permission.PermissionRegistry;
 import dev.aura.sundial.util.TimeCalculator;
 import java.io.File;
@@ -213,21 +214,27 @@ public class AuraSunDial {
     logger.info("Unloaded successfully!");
   }
 
+  private CommentedConfigurationNode loadConfigNode() throws IOException {
+    return loader.load(ConfigurationOptions.defaults().setObjectMapperFactory(factory));
+  }
+
   private void loadConfig() throws IOException, ObjectMappingException {
     logger.debug("Loading config...");
 
-    CommentedConfigurationNode node =
-        loader.load(ConfigurationOptions.defaults().setObjectMapperFactory(factory));
+    CommentedConfigurationNode node = loadConfigNode();
+    node = ConfigMigrations.migrateConfig(node);
 
     config = node.<Config>getValue(configToken, Config::new);
 
-    saveConfig();
+    saveConfig(node);
   }
 
   public void saveConfig() throws IOException, ObjectMappingException {
-    CommentedConfigurationNode node =
-        loader.load(ConfigurationOptions.defaults().setObjectMapperFactory(factory));
+    saveConfig(loadConfigNode());
+  }
 
+  public void saveConfig(CommentedConfigurationNode node)
+      throws IOException, ObjectMappingException {
     logger.debug("Saving/Formatting config...");
     node.setValue(configToken, config);
     loader.save(node);
