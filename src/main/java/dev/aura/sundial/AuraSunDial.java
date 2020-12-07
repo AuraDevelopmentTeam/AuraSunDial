@@ -7,6 +7,7 @@ import dev.aura.lib.messagestranslator.PluginMessagesTranslator;
 import dev.aura.sundial.command.CommandRealTime;
 import dev.aura.sundial.config.Config;
 import dev.aura.sundial.config.ConfigMigrations;
+import dev.aura.sundial.metrics.MetricManager;
 import dev.aura.sundial.permission.PermissionRegistry;
 import dev.aura.sundial.util.TimeCalculator;
 import java.io.File;
@@ -21,7 +22,7 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.GuiceObjectMapperFactory;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import org.bstats.sponge.MetricsLite2;
+import org.bstats.sponge.Metrics2;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 import org.spongepowered.api.Sponge;
@@ -82,15 +83,15 @@ public class AuraSunDial {
   protected List<Object> eventListeners = new LinkedList<>();
 
   @Inject
-  public AuraSunDial(MetricsLite2.Factory metricsFactory) {
+  public AuraSunDial(Metrics2.Factory metricsFactory) {
     if (instance != null) throw new IllegalStateException("instance cannot be instantiated twice");
 
     instance = this;
 
     // Make sure logger is initialized
     logger = getLogger();
-    // No need to save the instance if no custom graphs are registered
-    metricsFactory.make(1534);
+
+    MetricManager.startMetrics(metricsFactory);
   }
 
   public static Logger getLogger() {
