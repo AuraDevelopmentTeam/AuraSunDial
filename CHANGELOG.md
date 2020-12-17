@@ -1,3 +1,12 @@
+Version 1.3.1-DEV
+-----------------
+
+\+ Added `/realtime reload` command.  
+\+ Added translation keys.  
+\+ Added feature to allow modifying day time length without syncing to real time.
+\+ Added ability to sleep and set time when syncing is disabled.  
+
+
 Version 1.3.0
 -------------
 
