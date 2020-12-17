@@ -124,9 +124,7 @@ deploySnapshot:
     - job: build
       artifacts: true
   script:
-  - set -x
   - './gradlew --console=plain uploadArchives $(echo "$CI_COMMIT_MESSAGE" | grep -qF "[release]" && echo releaseSnapshot)'
-  - set +x
   retry: 2
   when: always
   except:
