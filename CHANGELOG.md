@@ -1,10 +1,11 @@
-Version 1.3.1-DEV
------------------
+Version 1.4.0
+-------------
 
 \+ Added `/realtime reload` command.  
 \+ Added translation keys.  
 \+ Added feature to allow modifying day time length without syncing to real time.
-\+ Added ability to sleep and set time when syncing is disabled.  
+\+ Added ability to sleep and set time when syncing is disabled (achieved with Mixins).  
+\* General fixes and improvements.  
 
 
 Version 1.3.0
